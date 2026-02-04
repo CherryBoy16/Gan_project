@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>AI Art Generator</title>
+
+<!-- Modern Sans Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+<!-- Animate.css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+<style>
+:root {
+  --primary: #6366f1;
+  --accent: #22d3ee;
+  --bg: radial-gradient(circle at top, #0f172a, #020617);
+  --glass: rgba(255,255,255,0.08);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+}
+
+/* Glass card */
+.container {
+  background: var(--glass);
+  backdrop-filter: blur(18px);
+  border-radius: 24px;
+  padding: 2.5rem;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  animation: fadeUp 0.8s ease;
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 900;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  color: #cbd5f5;
+  margin-bottom: 2rem;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+input {
+  width: 140px;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+button {
+  padding: 14px 22px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99,102,241,0.4);
+}
+
+button.primary {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+}
+
+button.secondary {
+  background: rgba(255,255,255,0.15);
+  color: white;
+}
+
+/* Frame */
+.frame {
+  height: 420px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+img {
+  max-width: 100%;
+  display: none;
+  animation: slideIn 0.6s ease forwards;
+}
+
+/* Loader */
+.loader {
+  font-weight: 600;
+  color: #94a3b8;
+  animation: pulse 1.5s infinite;
+}
+
+/* Badge */
+.badge {
+  margin-top: 12px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  display: none;
+}
+
+.badge.demo {
+  background: #facc15;
+  color: #422006;
+}
+
+.badge.real {
+  background: #22c55e;
+  color: #052e16;
+}
+
+/* Animations */
+@keyframes pulse {
+  0% { opacity: 1 }
+  50% { opacity: .4 }
+  100% { opacity: 1 }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(40px); opacity: 0 }
+  to { transform: translateX(0); opacity: 1 }
+}
+
+@keyframes fadeUp {
+  from { transform: translateY(30px); opacity: 0 }
+  to { transform: translateY(0); opacity: 1 }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>AI Art Generator</h1>
+  <p class="subtitle">Enter a DNA seed to synthesize a human face.</p>
+
+  <div class="controls">
+    <input type="number" id="seedInput" value="42">
+    <button class="primary" onclick="generate()">Generate</button>
+    <button class="secondary" onclick="randomize()">🎲</button>
+  </div>
+
+  <div class="frame">
+    <div id="loader" class="loader">Waiting for input…</div>
+    <img id="artImage" />
+  </div>
+
+  <div id="statusBadge" class="badge demo">DEMO MODE</div>
+</div>
+
+<script>
+function randomize() {
+  document.getElementById('seedInput').value = Math.floor(Math.random() * 9999);
+  generate();
+}
+
+async function generate() {
+  const seed = document.getElementById('seedInput').value;
+  const loader = document.getElementById('loader');
+  const img = document.getElementById('artImage');
+  const badge = document.getElementById('statusBadge');
+
+  img.style.display = 'none';
+  loader.style.display = 'block';
+  loader.innerText = "Synthesizing DNA...";
+
+  try {
+    const res = await fetch('/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seed: parseInt(seed), truncation: 0.7 })
+    });
+
+    const data = await res.json();
+
+    img.src = data.image_url;
+    img.onload = () => {
+      loader.style.display = 'none';
+      img.style.display = 'block';
+    };
+
+    badge.style.display = 'inline-block';
+    badge.innerText = data.mode + " MODE";
+    badge.className = "badge " + data.mode.toLowerCase();
+
+  } catch (e) {
+    loader.innerText = "Generation failed";
+  }
+}
+</script>
+
+</body>
+</html>
